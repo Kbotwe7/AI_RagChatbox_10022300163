@@ -38,7 +38,8 @@ EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-M
 
 # Chat: xAI Grok (OpenAI-compatible HTTP API — see https://docs.x.ai/docs/guides/chat)
 XAI_API_KEY = os.getenv("XAI_API_KEY", "").strip() or os.getenv("GROK_API_KEY", "").strip()
-GROK_MODEL = os.getenv("GROK_MODEL", "grok-beta")
+# Default must match a model your xAI account can call (see console.x.ai → Models). `grok-beta` is retired.
+GROK_MODEL = os.getenv("GROK_MODEL", "grok-3-mini")
 XAI_BASE_URL = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
 
 # Chunking defaults (justify in README / docs)
