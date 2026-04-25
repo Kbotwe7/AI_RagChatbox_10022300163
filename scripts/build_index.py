@@ -80,7 +80,8 @@ def load_local_docs(raw_dir: Path, skip_paths: set[Path]) -> list[dict]:
     return docs
 
 
-def main() -> None:
+def build_index() -> None:
+    """Download sources, embed, write FAISS + BM25 under data/processed/index_store/."""
     DATA_RAW.mkdir(parents=True, exist_ok=True)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
@@ -113,7 +114,6 @@ def main() -> None:
     out_dir = DATA_PROCESSED / "index_store"
     store.save(out_dir)
 
-    # Save BM25 corpus alongside for load-time
     import pickle
 
     bm25 = build_bm25_from_chunks(store.chunks)
@@ -123,6 +123,10 @@ def main() -> None:
     print(f"Indexed {len(chunks)} chunks into {out_dir}")
     if local_docs:
         print(f"Included {len(local_docs)} extra local documents from {DATA_RAW}")
+
+
+def main() -> None:
+    build_index()
 
 
 if __name__ == "__main__":

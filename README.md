@@ -68,6 +68,17 @@ python scripts/build_index.py
 streamlit run app.py
 ```
 
+### Streamlit Community Cloud (missing index)
+
+Cloud clones do not include `data/processed/` (it is gitignored). Either:
+
+1. **Auto-build on the server (simplest):** In the deployed app go to **Manage app → Settings → Secrets** and add:
+   - `XAI_API_KEY` = your key (required for answers)
+   - `RAG_BUILD_INDEX_IF_MISSING` = `1`  
+   Save, **Reboot** the app, then open it once and wait several minutes while the first run downloads the CSV/PDF and builds the FAISS index.
+
+2. **Ship a pre-built index:** Run `python scripts/build_index.py` locally, then commit `data/processed/index_store/` and adjust `.gitignore` if your course allows large binaries in Git.
+
 ---
 
 ## Evaluation Queries Used

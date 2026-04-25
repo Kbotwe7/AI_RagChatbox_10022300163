@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import json
 import mimetypes
+import os
 import sys
 import textwrap
 from pathlib import Path
@@ -33,6 +34,28 @@ from src.config import (
 from src.feedback_store import FeedbackStore
 from src.index_loader import load_retriever
 from src.rag_pipeline import RagPipeline
+
+INDEX_META_PATH = DATA_PROCESSED / "index_store" / "meta.json"
+
+
+def _wants_auto_build_index() -> bool:
+    """True if env or Streamlit secrets ask to run build_index when files are missing."""
+    v = (os.environ.get("RAG_BUILD_INDEX_IF_MISSING") or "").strip().lower()
+    if v in ("1", "true", "yes"):
+        return True
+    try:
+        if "RAG_BUILD_INDEX_IF_MISSING" in st.secrets:
+            return str(st.secrets["RAG_BUILD_INDEX_IF_MISSING"]).strip().lower() in ("1", "true", "yes")
+    except Exception:
+        pass
+    return False
+
+
+@st.cache_resource
+def _run_build_index_once() -> None:
+    from scripts.build_index import build_index
+
+    build_index()
 
 
 def _first_existing(candidates: list[Path]) -> Path | None:
@@ -411,11 +434,35 @@ def main() -> None:
         ]
     )
 
+    if not INDEX_META_PATH.is_file():
+        if _wants_auto_build_index():
+            with st.spinner(
+                "Building search index on the server (first run only; downloads data and embeds — often several minutes)…"
+            ):
+                try:
+                    _run_build_index_once()
+                except Exception as build_err:
+                    st.error("Could not build the index on the server.")
+                    st.exception(build_err)
+                    return
+        if not INDEX_META_PATH.is_file():
+            st.error(
+                "**Search index is missing** (normal on Streamlit Cloud if you have not shipped `data/processed/`).\n\n"
+                "**Option A — build on Cloud:** App **Settings → Secrets** add:\n\n"
+                "`RAG_BUILD_INDEX_IF_MISSING = \"1\"`\n\n"
+                "Save and **Reboot** the app. Open the app once and wait for the index build to finish.\n\n"
+                "**Option B — pre-built index:** On your PC run `python scripts/build_index.py`, then commit "
+                "`data/processed/index_store/` (and relax `.gitignore` if your course allows it)."
+            )
+            st.caption(f"Expected: `{INDEX_META_PATH}`")
+            return
+
     try:
         _, pipeline, feedback = _resources()
     except Exception as e:
         st.error(
-            "Index not found or failed to load. Run `python scripts/build_index.py` from the project root first."
+            "Index not found or failed to load. Run `python scripts/build_index.py` from the project root first, "
+            "or enable Cloud auto-build (see message above)."
         )
         st.exception(e)
         return
