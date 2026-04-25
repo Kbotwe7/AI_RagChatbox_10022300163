@@ -468,20 +468,27 @@ def main() -> None:
         return
 
     env_path = PROJECT_ROOT / ".env"
-    if not env_path.is_file():
+    key = (XAI_API_KEY or "").strip()
+    has_key = bool(key)
+    placeholder_key = "your-key-here" in key.lower()
+
+    if not has_key:
+        if env_path.is_file():
+            st.info(
+                f"`XAI_API_KEY` (or `GROK_API_KEY`) is empty in `{env_path}`. Create a key at "
+                "[console.x.ai](https://console.x.ai/), add it, save, and restart Streamlit."
+            )
+        else:
+            st.info(
+                "**No API key found.** "
+                "On your **PC**, copy `.env.example` to `.env` and set `XAI_API_KEY`. "
+                "On **Streamlit Community Cloud**, open **App settings → Secrets** and add "
+                "`XAI_API_KEY` — a `.env` file is not used on the server."
+            )
+    elif placeholder_key:
         st.info(
-            f"No `.env` file at `{env_path}`. Copy `.env.example` to `.env`, set keys for your provider, "
-            "then restart Streamlit."
-        )
-    elif not (XAI_API_KEY or "").strip():
-        st.info(
-            f"`XAI_API_KEY` (or `GROK_API_KEY`) is empty in `{env_path}`. Create a key at "
-            "[console.x.ai](https://console.x.ai/), add it to `.env`, then restart Streamlit."
-        )
-    elif "your-key-here" in (XAI_API_KEY or "").lower():
-        st.info(
-            "`XAI_API_KEY` in `.env` is still a **placeholder**. Replace it with your real key from "
-            "[console.x.ai](https://console.x.ai/), save, and restart Streamlit."
+            "`XAI_API_KEY` still looks like a **placeholder**. Replace it with a real key from "
+            "[console.x.ai](https://console.x.ai/) in `.env` (local) or **Secrets** (Cloud)."
         )
 
     with st.sidebar:
