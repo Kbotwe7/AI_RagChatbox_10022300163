@@ -27,15 +27,18 @@ def _minmax(x: list[float]) -> list[float]:
 
 def expand_query_synonyms(query: str) -> str:
     """Lightweight query expansion for domain terms (fix for keyword misses)."""
-    expansions = {
-        "gdp": "gross domestic product",
-        "inflation": "consumer prices cpi",
-        "election": "presidential parliamentary votes",
-        "tax": "revenue mobilisation",
-    }
+    # Longer keys first so "winner" matches before the substring "won".
+    expansions: list[tuple[str, str]] = [
+        ("winner", "NPP NDC presidential candidate votes"),
+        ("won", "NPP NDC presidential candidate votes"),
+        ("gdp", "gross domestic product"),
+        ("inflation", "consumer prices cpi"),
+        ("election", "presidential parliamentary votes"),
+        ("tax", "revenue mobilisation"),
+    ]
     q = query.lower()
     extra: list[str] = []
-    for k, v in expansions.items():
+    for k, v in expansions:
         if k in q:
             extra.append(v)
     if not extra:
@@ -63,7 +66,10 @@ class HybridRetriever:
         use_hybrid: bool = True,
         use_query_expansion: bool = False,
     ) -> list[dict[str, Any]]:
-        q = expand_query_synonyms(query) if use_query_expansion else query
+        # Always apply light synonym hints (helps BM25 + dense for short questions).
+        q = expand_query_synonyms(query)
+        if use_query_expansion:
+            q = f"{q} aggregated totals national regional constituency"
         q_emb = self.embedder.encode_query(q)
 
         n = min(len(self.store.chunks), max(k * 4, k))

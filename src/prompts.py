@@ -9,6 +9,7 @@ from typing import Any
 
 SYSTEM_BASE = """You are an assistant for Academic City University (Ghana).
 Answer using ONLY the provided CONTEXT when it is sufficient.
+You may combine facts from multiple CONTEXT blocks when each fact appears explicitly (e.g. comparing vote numbers on different rows).
 If the context does not contain the answer, say you do not have enough information in the provided documents — do not invent facts.
 Cite which part of the context you used when possible (short paraphrase, not long quotes)."""
 
@@ -33,8 +34,13 @@ def build_user_prompt(
 
     if variant == "strict":
         rules = (
-            "Rules: Use only CONTEXT. If missing, reply exactly: "
-            "'I cannot answer from the provided documents.'"
+            "Rules: Use only CONTEXT. You may synthesize from multiple rows "
+            "(e.g. regional presidential vote tables) only using numbers and names "
+            "that appear in CONTEXT. If CONTEXT supports a partial answer "
+            "(e.g. who led in the regions shown), give that and state what is not "
+            "in CONTEXT (e.g. nationwide totals). Reply exactly "
+            "'I cannot answer from the provided documents.' only when CONTEXT "
+            "contains no usable facts for the question at all."
         )
     elif variant == "concise":
         rules = "Rules: Be brief (max 6 sentences). Use only CONTEXT."

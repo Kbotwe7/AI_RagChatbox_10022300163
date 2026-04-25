@@ -8,6 +8,7 @@ import base64
 import json
 import mimetypes
 import sys
+import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -36,6 +37,39 @@ from src.rag_pipeline import RagPipeline
 
 def _first_existing(candidates: list[Path]) -> Path | None:
     for p in candidates:
+        if p.is_file():
+            return p
+    return None
+
+
+def _logo_path() -> Path | None:
+    """Prefer fixed names; then any raster matching logo* in assets/images."""
+    candidates: list[Path] = [
+        ASSET_IMAGES / "logo.png",
+        ASSET_IMAGES / "logo.jpg",
+        ASSET_IMAGES / "logo.jpeg",
+        ASSET_IMAGES / "logo.webp",
+        ASSET_IMAGES / "ac-logo.png",
+        ASSET_IMAGES / "ac-logo.jpg",
+        ASSET_IMAGES / "ac-logo.jpeg",
+        ASSET_IMAGES / "ac-logo.webp",
+        ASSET_IMAGES / "header-logo.png",
+        ASSET_IMAGES / "header-logo.jpg",
+        ASSET_IMAGES / "header-logo.jpeg",
+        ASSET_IMAGES / "header-logo.webp",
+        ASSET_IMAGES / "emblem.png",
+        ASSET_IMAGES / "emblem.jpg",
+        ASSET_IMAGES / "emblem.jpeg",
+        ASSET_IMAGES / "emblem.webp",
+    ]
+    found = _first_existing(candidates)
+    if found is not None:
+        return found
+    exts = (".png", ".jpg", ".jpeg", ".webp")
+    extra: list[Path] = []
+    for ext in exts:
+        extra.extend(sorted(ASSET_IMAGES.glob(f"logo*{ext}")))
+    for p in extra:
         if p.is_file():
             return p
     return None
@@ -91,7 +125,8 @@ def _inject_theme_css(bg_data_url: str | None) -> None:
         bg_layer = "linear-gradient(145deg, #e2e8f0 0%, #cbd5e1 40%, #94a3b8 100%)"
 
     st.markdown(
-        f"""
+        textwrap.dedent(
+            f"""
         <style>
           :root {{
             --ac-red: #b91c1c;
@@ -165,13 +200,15 @@ def _inject_theme_css(bg_data_url: str | None) -> None:
             color: #000000 !important;
           }}
           .block-container {{
-            padding: 2rem 1.75rem 3rem 1.75rem;
-            max-width: 920px;
-            background: rgba(255,255,255,0.78);
-            border-radius: 20px;
-            border: 1px solid rgba(185, 28, 28, 0.18);
-            box-shadow: 0 25px 50px -12px rgba(15,23,42,0.14);
-            margin-top: 0.5rem;
+            padding: 2.25rem 2rem 3rem 2rem;
+            max-width: 880px;
+            margin-left: auto;
+            margin-right: auto;
+            background: rgba(255,255,255,0.82);
+            border-radius: 18px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            box-shadow: 0 25px 50px -12px rgba(15,23,42,0.18);
+            margin-top: 0.75rem;
           }}
           div[data-testid="stAlert"] {{ border-radius: 10px !important; }}
           .app-header {{
@@ -186,44 +223,48 @@ def _inject_theme_css(bg_data_url: str | None) -> None:
             flex-wrap: wrap;
           }}
           .app-header .header-logo {{
-            width: 76px;
+            width: 92px;
             height: auto;
-            max-height: 88px;
+            max-height: 100px;
             object-fit: contain;
             flex-shrink: 0;
-            margin-top: 0.15rem;
+            margin-top: 0.1rem;
           }}
           .app-header .title-wrap {{
-            border-left: 5px solid var(--ac-red);
+            border-left: 4px solid var(--ac-red);
             padding-left: 1rem;
             margin: 0;
             flex: 1;
             min-width: 200px;
           }}
           .app-header .title {{
-            font-size: clamp(1.85rem, 3.2vw, 2.35rem);
+            font-size: clamp(1.75rem, 3vw, 2.2rem);
             font-weight: 800;
-            line-height: 1.15;
+            line-height: 1.2;
             margin: 0;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.02em;
+            color: #0f172a;
           }}
-          .app-header .title .ac {{ color: var(--ac-red); }}
-          .app-header .title .rag {{ color: #0f172a; font-weight: 800; }}
-          .app-header .subtitle {{ color: #475569; font-size: 0.95rem; margin: 0.35rem 0 0 0; line-height: 1.5; }}
+          .app-header .subtitle {{
+            color: #334155;
+            font-size: 0.95rem;
+            margin: 0.5rem 0 0 0;
+            line-height: 1.55;
+          }}
           .app-header .meta {{
-            margin-top: 0.75rem;
-            font-size: 0.82rem;
-            color: #64748b;
+            margin-top: 0.65rem;
+            font-size: 0.84rem;
+            color: #475569;
           }}
           .section-label {{
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.8rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #b91c1c;
-            margin: 1.25rem 0 0.5rem 0;
-            padding-left: 0.6rem;
-            border-left: 3px solid var(--ac-red);
+            letter-spacing: 0.06em;
+            color: #0f172a;
+            margin: 1.35rem 0 0.55rem 0;
+            padding-left: 0.65rem;
+            border-left: 4px solid var(--ac-red);
           }}
           /* Force readable dark text for chatbot answer/output area */
           .block-container [data-testid="stMarkdownContainer"] p,
@@ -254,12 +295,12 @@ def _inject_theme_css(bg_data_url: str | None) -> None:
             background: #fff !important;
             color: #0f172a !important;
             caret-color: #0f172a !important;
-            border-radius: 12px !important;
-            border: 1px solid rgba(185,28,28,0.22) !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(15, 23, 42, 0.35) !important;
           }}
           .stTextArea textarea:focus {{
-            border-color: rgba(185,28,28,0.45) !important;
-            box-shadow: 0 0 0 1px rgba(185,28,28,0.15) !important;
+            border-color: rgba(15, 23, 42, 0.55) !important;
+            box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.2) !important;
           }}
           .stButton > button {{
             background: #b91c1c !important;
@@ -277,7 +318,8 @@ def _inject_theme_css(bg_data_url: str | None) -> None:
           }}
           h1, h2, h3 {{ color: #0f172a !important; }}
         </style>
-        """,
+        """
+        ).strip(),
         unsafe_allow_html=True,
     )
 
@@ -295,7 +337,7 @@ def main() -> None:
     st.set_page_config(
         page_title="Academic City RAG System chatbot",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
     )
 
     bg_path = _first_existing(
@@ -329,15 +371,7 @@ def main() -> None:
             bg_url = _background_data_url(str(bg_path), mtime_ns)
     _inject_theme_css(bg_url)
 
-    logo_path = _first_existing(
-        [
-            ASSET_IMAGES / "logo.png",
-            ASSET_IMAGES / "logo.jpg",
-            ASSET_IMAGES / "logo.webp",
-            ASSET_IMAGES / "ac-logo.png",
-            ASSET_IMAGES / "ac-logo.jpg",
-        ]
-    )
+    logo_path = _logo_path()
     logo_url = _logo_data_url(str(logo_path)) if logo_path else None
     logo_html = (
         f'<img class="header-logo" src="{logo_url}" alt="Logo" />'
@@ -347,20 +381,20 @@ def main() -> None:
 
     meta = student_header()
     st.markdown(
-        f"""
+        textwrap.dedent(
+            f"""
         <div class="app-header">
           <div class="app-header-row">
             {logo_html}
             <div class="title-wrap">
-              <p class="title">
-                <span class="ac">Academic City</span><span class="rag"> RAG System chatbot</span>
-              </p>
+              <p class="title">Academic City RAG System chatbot</p>
             </div>
           </div>
           <p class="subtitle">Query the indexed Ghana election data and 2025 national budget. Each run shows retrieval, the prompt sent to the model, and the answer.</p>
           <p class="meta">{meta}</p>
         </div>
-        """,
+        """
+        ).strip(),
         unsafe_allow_html=True,
     )
 
